@@ -35,6 +35,8 @@ garbage = lapply(species,
 	 cat("\\\\")
 	 print_tex_table(get_dataframe_by_nuclear_species(name,"NHHE"),paste(name," vs. NHHE"),"|cc|llll|" )
 	 print_tex_table(get_dataframe_by_nuclear_species(name,"REWA"),paste(name," vs. REWA"),"|cc|llll|" )
+	 cat("\\\\")
+	 print_tex_table(get_dataframe_by_control(name),paste("Control: name"),"|cc|llll|" )
 	 cat("\\\\ \\end{center}")
 	 cat("\\newpage\n")
        })
