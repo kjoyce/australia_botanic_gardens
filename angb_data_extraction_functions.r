@@ -94,9 +94,10 @@ get_dataframe_by_reliability = function(name) {
 # Hypothesis 5 - Control Effect
 get_dataframe_by_control = function(name) {
   df = get_dataframe_by_species(name)
-  idx = (df$Stimuli_1 != 'CRRO') + 1
-  levs = c("control","not-control")
+  idx = (df$Stimuli_1 == 'CRRO') + 1
+  levs = c("not-control","control")
   controls = factor(levs[idx]);
-  return(sum_columns_over_factor(df,controls))
+  ddf = sum_columns_over_factor(df,controls);
+  return(ddf)
 }
 

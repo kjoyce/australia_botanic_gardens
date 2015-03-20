@@ -50,6 +50,7 @@ logit_model = glm(cbind(Any,Present-Any)~factor(Sizes),family=binomial, data=df_
 #species = levels(au_csv_data$Species) # This puts the species in alphabetical order
 #species = c("WBSC","SUFW","NHHE","REWA","EASP","BRTH","CRRO","PICU") # The last 3 are not of interest
 species = c("WBSC","SUFW","NHHE","REWA","EASP")
+names(species) = as.character(lapply(species, function(name){ paste("=============== ",name," ==============") })) 
 
 # This will show you tables of each of the data frames. They are in order of species
 # These also save the data in arrays of data.frames. This might be useful for looping later.
@@ -58,60 +59,67 @@ cat(" =====================================================================\n",
     sprintf("%s => [[%d]]\n", species, 1:5), 
     " =====================================================================\n")
 (lapply(species, get_dataframe_by_species))
-(lapply(species, get_dataframe_by_size))
+(lapply(species, get_dataframe_by_size)
 (lapply(species, get_dataframe_by_reliability))
 (matching_data = lapply(species, function(name) { lapply(c("WBSC","SUFW","NHHE","REWA"), function(compared_to) {get_dataframe_by_nuclear_species(name,compared_to)}) }) )
 
+# This function does analysis on a given dataframe and does a zero cell correction with a given buffer
+zero_correct_analyze = function( df, buf=.001 ) { 
+  m = ncol(df)
+  resp = df[,(m-3):m]  # Get response columns
+  resp[resp < 1] = buf # Add buf percentage of present to zero responses
+  df[,(m-3):m] = resp  # Update dataframe
+  idx = 3:0	       # Name the indices so that output is readable
+  names(idx) = names(df[,(m-3):m]) # Name them
+  return(lapply( idx, function(i){ 
+    summary( glm(cbind(df[,m-i],df[,m-4]-df[,m-i])~ . ,data=df[,1:(m-5)],family=binomial) ) 
+  }))
+}
+
 # Hypothesis 0
 cat(" ============= No Reduction model ================\n") 
-(lapply(species, function(name) { summary(with(get_dataframe_by_species(name), glm(cbind(Approach,Present-Approach)~Stimuli_1+Stimuli_2,family=binomial)) ) }))
-(lapply(species, function(name) { summary(with(get_dataframe_by_species(name), glm(cbind(Playback,Present-Playback)~Stimuli_1+Stimuli_2,family=binomial)) ) }))
-(lapply(species, function(name) { summary(with(get_dataframe_by_species(name), glm(cbind(Post,Present-Post)~Stimuli_1+Stimuli_2,family=binomial)) ) }))
-(lapply(species, function(name) { summary(with(get_dataframe_by_species(name), glm(cbind(Any,Present-Any)~Stimuli_1+Stimuli_2,family=binomial)) ) }))
+lapply(species, function(name) {
+  zero_correct_analyze( get_dataframe_by_species(name) )
+})
 
 # Hypotheis 1
 cat(" ============= Hypothesis 1 - Size response ================\n") 
-(lapply(species, function(name) { summary(with(get_dataframe_by_size(name), glm(cbind(Approach,Present-Approach)~Sizes,family=binomial(link=logit)))) }))
-(lapply(species, function(name) { summary(with(get_dataframe_by_size(name), glm(cbind(Playback,Present-Playback)~Sizes,family=binomial(link=logit)))) }))
-(lapply(species, function(name) { summary(with(get_dataframe_by_size(name), glm(cbind(Post,Present-Post)~Sizes,family=binomial(link=logit)))) }))
-(lapply(species, function(name) { summary(with(get_dataframe_by_size(name), glm(cbind(Any,Present-Any)~Sizes,family=binomial(link=logit)))) }))
+lapply(species, function(name) {
+  zero_correct_analyze( get_dataframe_by_size(name) )
+})
 
 # Hypothesis 2 and 3 for WBSC
 cat(" ============= Hypothesis 2 and 3 - Response to WBSC ================\n") 
-(lapply(species, function(name) { summary(with(get_dataframe_by_nuclear_species(name,"WBSC"), glm(cbind(Approach,Present-Approach)~Sizes,family=binomial(link=logit)))) }))
-(lapply(species, function(name) { summary(with(get_dataframe_by_nuclear_species(name,"WBSC"), glm(cbind(Playback,Present-Playback)~Sizes,family=binomial(link=logit)))) }))
-(lapply(species, function(name) { summary(with(get_dataframe_by_nuclear_species(name,"WBSC"), glm(cbind(Post,Present-Post)~Sizes,family=binomial(link=logit)))) }))
-(lapply(species, function(name) { summary(with(get_dataframe_by_nuclear_species(name,"WBSC"), glm(cbind(Any,Present-Any)~Sizes,family=binomial(link=logit)))) }))
+lapply(species, function(name) {
+  zero_correct_analyze( get_dataframe_by_species(name,"WBSC") )
+})
+
 # Hypothesis 2 and 3 for SUFW
 cat(" ============= Hypothesis 2 and 3 - Response to SUFW ================\n") 
-(lapply(species, function(name) { summary(with(get_dataframe_by_nuclear_species(name,"SUFW"), glm(cbind(Approach,Present-Approach)~Sizes,family=binomial(link=logit)))) }))
-(lapply(species, function(name) { summary(with(get_dataframe_by_nuclear_species(name,"SUFW"), glm(cbind(Playback,Present-Playback)~Sizes,family=binomial(link=logit)))) }))
-(lapply(species, function(name) { summary(with(get_dataframe_by_nuclear_species(name,"SUFW"), glm(cbind(Post,Present-Post)~Sizes,family=binomial(link=logit)))) }))
-(lapply(species, function(name) { summary(with(get_dataframe_by_nuclear_species(name,"SUFW"), glm(cbind(Any,Present-Any)~Sizes,family=binomial(link=logit)))) }))
+lapply(species, function(name) {
+  zero_correct_analyze( get_dataframe_by_species(name,"SUFW") )
+})
+
 # Hypothesis 2 and 3 for NHHE
 cat(" ============= Hypothesis 2 and 3 - Response to NHHE ================\n") 
-(lapply(species, function(name) { summary(with(get_dataframe_by_nuclear_species(name,"NHHE"), glm(cbind(Approach,Present-Approach)~Sizes,family=binomial(link=logit)))) }))
-(lapply(species, function(name) { summary(with(get_dataframe_by_nuclear_species(name,"NHHE"), glm(cbind(Playback,Present-Playback)~Sizes,family=binomial(link=logit)))) }))
-(lapply(species, function(name) { summary(with(get_dataframe_by_nuclear_species(name,"NHHE"), glm(cbind(Post,Present-Post)~Sizes,family=binomial(link=logit)))) }))
-(lapply(species, function(name) { summary(with(get_dataframe_by_nuclear_species(name,"NHHE"), glm(cbind(Any,Present-Any)~Sizes,family=binomial(link=logit)))) }))
+lapply(species, function(name) {
+  zero_correct_analyze( get_dataframe_by_species(name,"NHHE") )
+})
 
 # Hypothesis 2 and 3 for REWA
 cat(" ============= Hypothesis 2 and 3 - Response to REWA ================\n") 
-(lapply(species, function(name) { summary(with(get_dataframe_by_nuclear_species(name,"REWA"), glm(cbind(Approach,Present-Approach)~Sizes,family=binomial(link=logit)))) }))
-(lapply(species, function(name) { summary(with(get_dataframe_by_nuclear_species(name,"REWA"), glm(cbind(Playback,Present-Playback)~Sizes,family=binomial(link=logit)))) }))
-(lapply(species, function(name) { summary(with(get_dataframe_by_nuclear_species(name,"REWA"), glm(cbind(Post,Present-Post)~Sizes,family=binomial(link=logit)))) }))
-(lapply(species, function(name) { summary(with(get_dataframe_by_nuclear_species(name,"REWA"), glm(cbind(Any,Present-Any)~Sizes,family=binomial(link=logit)))) }))
+lapply(species, function(name) {
+  zero_correct_analyze( get_dataframe_by_species(name,"REWA") )
+})
 
 # Hypothesis 4
 cat(" ============= Hypothesis 4 - Response to Reliable Signal (same or different) ================\n") 
-(lapply(species, function(name) { summary(with(get_dataframe_by_reliability(name), glm(cbind(Approach,Present-Approach)~Sizes,family=binomial(link=logit)))) }))
-(lapply(species, function(name) { summary(with(get_dataframe_by_reliability(name), glm(cbind(Playback,Present-Playback)~Sizes,family=binomial(link=logit)))) }))
-(lapply(species, function(name) { summary(with(get_dataframe_by_reliability(name), glm(cbind(Post,Present-Post)~Sizes,family=binomial(link=logit)))) }))
-(lapply(species, function(name) { summary(with(get_dataframe_by_reliability(name), glm(cbind(Any,Present-Any)~Sizes,family=binomial(link=logit)))) }))
+lapply(species, function(name) {
+  zero_correct_analyze( get_dataframe_by_reliability(name) )
+})
 
 # Hypothesis 5
 cat(" ============= Hypothesis 5 - Response to control ================\n") 
-(lapply(species, function(name) { summary(with(get_dataframe_by_control(name), glm(cbind(Approach,Present-Approach)~Sizes,family=binomial(link=logit)))) }))
-(lapply(species, function(name) { summary(with(get_dataframe_by_control(name), glm(cbind(Playback,Present-Playback)~Sizes,family=binomial(link=logit)))) }))
-(lapply(species, function(name) { summary(with(get_dataframe_by_control(name), glm(cbind(Post,Present-Post)~Sizes,family=binomial(link=logit)))) }))
-(lapply(species, function(name) { summary(with(get_dataframe_by_control(name), glm(cbind(Any,Present-Any)~Sizes,family=binomial(link=logit)))) }))
+lapply(species, function(name) {
+  zero_correct_analyze( get_dataframe_by_control(name),.8 )
+})
